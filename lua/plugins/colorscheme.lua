@@ -35,6 +35,7 @@ return {
           LineNr = { fg = "#838FA6" }, -- inactive line numbers (muted)
           CursorLineNr = { fg = "#2E3440", style = "bold" }, -- current line number
           Pmenu = { bg = "NONE" }, -- transparent completion menu
+          LspInlayHint = { bg = "NONE" }, -- no background box behind inlay hints
         },
       })
     end,
