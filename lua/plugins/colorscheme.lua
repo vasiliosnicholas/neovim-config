@@ -12,11 +12,49 @@ return {
         highlights.LineNr = { fg = "#7b88a1" } -- inactive line numbers
         highlights.CursorLineNr = { fg = "#d8dee9", bold = true } -- current line number
         highlights.LspInlayHint = { fg = "#b48ead", bg = "NONE" }
+        -- transparent floating windows (hover docs, completion menu, pickers)
+        for _, group in ipairs({ "NormalFloat", "FloatBorder", "Pmenu" }) do
+          highlights[group] = vim.tbl_extend("force", highlights[group] or {}, { bg = "NONE" })
+        end
       end,
     },
   },
   {
     "LazyVim/LazyVim",
     opts = { colorscheme = "nord" },
+  },
+  -- Light-mode companion to nord (same Nord palette on a Snow Storm background)
+  {
+    "rmehri01/onenord.nvim",
+    lazy = true,
+    config = function()
+      -- set_options (not setup) so the theme isn't applied as a side effect of loading
+      require("onenord.config").set_options({
+        disable = { background = true, float_background = true }, -- transparent, like nord in dark mode
+        custom_highlights = {
+          LineNr = { fg = "#838FA6" }, -- inactive line numbers (muted)
+          CursorLineNr = { fg = "#2E3440", style = "bold" }, -- current line number
+          Pmenu = { bg = "NONE" }, -- transparent completion menu
+        },
+      })
+    end,
+  },
+  -- Follow KDE Plasma's light/dark setting (via the freedesktop portal over D-Bus)
+  {
+    "f-person/auto-dark-mode.nvim",
+    lazy = false,
+    priority = 999,
+    opts = {
+      set_dark_mode = function()
+        vim.o.background = "dark"
+        vim.cmd.colorscheme("nord")
+      end,
+      set_light_mode = function()
+        vim.o.background = "light"
+        vim.cmd.colorscheme("onenord") -- picks its light variant from 'background'
+      end,
+      update_interval = 3000,
+      fallback = "dark",
+    },
   },
 }
