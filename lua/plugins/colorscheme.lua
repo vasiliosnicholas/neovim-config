@@ -32,7 +32,7 @@ return {
       require("onenord.config").set_options({
         disable = { background = true, float_background = true }, -- transparent, like nord in dark mode
         custom_highlights = {
-          LineNr = { fg = "#838FA6" }, -- inactive line numbers (muted)
+          LineNr = { fg = "#6E7A94" }, -- inactive line numbers (muted; was #838FA6)
           CursorLineNr = { fg = "#2E3440", style = "bold" }, -- current line number
           Pmenu = { bg = "NONE" }, -- transparent completion menu
           LspInlayHint = { bg = "NONE" }, -- no background box behind inlay hints
