@@ -30,6 +30,76 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
   end,
 })
 
+-- Don't equalize all splits when the terminal emulator window is resized (LazyVim default);
+-- keep-split-ratio.nvim (widths) and the autocmd below (heights) scale them proportionally instead
+vim.api.nvim_del_augroup_by_name("lazyvim_resize_splits")
+
+-- Scale split heights proportionally when Neovim's screen size changes
+-- (keep-split-ratio.nvim only handles widths)
+do
+  local group = vim.api.nvim_create_augroup("ProportionalHeights", { clear = true })
+  -- per tab: `base` is the last layout you made yourself, `applied` is what rescale() last produced.
+  -- Scaling always starts from `base`, so repeated resizes don't accumulate rounding errors.
+  local layouts = {} ---@type table<integer, {base: table, applied?: table}>
+
+  -- rows available to windows (the command line, tabline and global statusline don't scale)
+  local function avail_rows()
+    local tabline = (vim.o.showtabline == 2 or (vim.o.showtabline == 1 and #vim.api.nvim_list_tabpages() > 1)) and 1 or 0
+    return vim.o.lines - vim.o.cmdheight - tabline - (vim.o.laststatus == 3 and 1 or 0)
+  end
+
+  local function capture(tab)
+    local heights = {}
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+      if vim.api.nvim_win_get_config(win).relative == "" then -- skip floating windows
+        heights[win] = vim.api.nvim_win_get_height(win)
+      end
+    end
+    return { rows = avail_rows(), heights = heights }
+  end
+
+  local function snapshot()
+    local tab = vim.api.nvim_get_current_tabpage()
+    local current, layout = capture(tab), layouts[tab]
+    if layout and layout.applied and vim.deep_equal(current, layout.applied) then
+      return -- this is just the result of our own rescale; keep the base
+    end
+    layouts[tab] = { base = current }
+  end
+
+  local function rescale()
+    local tab = vim.api.nvim_get_current_tabpage()
+    local layout = layouts[tab]
+    if not layout or (layout.applied or layout.base).rows == avail_rows() then
+      return
+    end
+    local scale = avail_rows() / layout.base.rows
+    for _ = 1, 2 do -- twice, because resizing one window can nudge its neighbours
+      for win, h in pairs(layout.base.heights) do
+        if vim.api.nvim_win_is_valid(win) then
+          vim.api.nvim_win_set_height(win, math.max(1, math.floor(h * scale + 0.5)))
+        end
+      end
+    end
+    layout.applied = capture(tab)
+  end
+
+  vim.api.nvim_create_autocmd("WinResized", { group = group, callback = snapshot })
+  -- scheduled so it runs after every other VimResized handler (LazyVim's equalize, keep-split-ratio)
+  vim.api.nvim_create_autocmd("VimResized", { group = group, callback = vim.schedule_wrap(rescale) })
+  vim.api.nvim_create_autocmd("TabEnter", {
+    group = group,
+    callback = function()
+      if layouts[vim.api.nvim_get_current_tabpage()] then
+        rescale()
+      else
+        snapshot()
+      end
+    end,
+  })
+  snapshot()
+end
+
 -- Snacks terminal splits: remember the height when the window closes/hides, and reopen at that height.
 -- (The terminal object survives hiding, so storing it in its window opts is enough.)
 vim.api.nvim_create_autocmd("WinClosed", {
