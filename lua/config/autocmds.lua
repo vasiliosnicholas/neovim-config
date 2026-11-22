@@ -30,6 +30,25 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
   end,
 })
 
+-- Snacks terminal splits: remember the height when the window closes/hides, and reopen at that height.
+-- (The terminal object survives hiding, so storing it in its window opts is enough.)
+vim.api.nvim_create_autocmd("WinClosed", {
+  group = vim.api.nvim_create_augroup("TermRememberHeight", { clear = true }),
+  callback = function(args)
+    local win = tonumber(args.match)
+    if not (win and vim.api.nvim_win_is_valid(win)) or vim.api.nvim_win_get_config(win).relative ~= "" then
+      return -- invalid or floating window
+    end
+    -- match by buffer: snacks clears term.win before it closes the window on hide
+    local buf = vim.api.nvim_win_get_buf(win)
+    for _, term in ipairs(Snacks.terminal.list()) do
+      if term.buf == buf and (term.opts.position == "bottom" or term.opts.position == "top") then
+        term.opts.height = vim.api.nvim_win_get_height(win)
+      end
+    end
+  end,
+})
+
 -- vim.api.nvim_create_autocmd("ColorScheme", {
 --   callback = function()
 --     vim.api.nvim_set_hl(0, "NormalFloat", { bg = "NONE" })

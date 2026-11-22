@@ -10,3 +10,4 @@ vim.g.lazyvim_python_ruff = "ruff"
 vim.o.updatetime = 750
 -- word-wrap on by default
 vim.opt.wrap = true
+vim.o.equalalways = false
