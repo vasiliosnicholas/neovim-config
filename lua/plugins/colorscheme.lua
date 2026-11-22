@@ -12,10 +12,13 @@ return {
         highlights.LineNr = { fg = "#7b88a1" } -- inactive line numbers
         highlights.CursorLineNr = { fg = "#d8dee9", bold = true } -- current line number
         highlights.LspInlayHint = { fg = "#b48ead", bg = "NONE" }
+        highlights.WinSeparator = { fg = "#81a1c1", bg = "NONE" } -- window divider (original #3b4252)
+        highlights.VertSplit = { fg = "#81a1c1", bg = "NONE" }
         -- transparent floating windows (hover docs, completion menu, pickers)
         for _, group in ipairs({ "NormalFloat", "FloatBorder", "Pmenu" }) do
           highlights[group] = vim.tbl_extend("force", highlights[group] or {}, { bg = "NONE" })
         end
+        highlights.FloatBorder.fg = "#81a1c1" -- float/popup borders (original #4c566a)
       end,
     },
   },
